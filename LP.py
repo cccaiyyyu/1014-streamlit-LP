@@ -140,25 +140,38 @@ if app_mode == "線性規劃計算器":
     st.caption("支援多決策變數建模、即時數學模型顯示、敏感度與影子價格分析、2D 幾何與等利潤線視覺化")
 
     st.subheader("1. 模型基本設定與目標函數")
-    c1, c2, c3 = st.columns([1, 1, 1])
+    c1, c2 = st.columns([1, 1])
+    
     with c1:
         opt_type = st.selectbox("最佳化類型", ["Max", "Min"])
+    
     with c2:
-        num_vars = st.number_input("決策變數數量", min_value=1, max_value=6, value=2, step=1)
-    with c3:
-        non_neg = st.checkbox("啟用非負限制 (xᵢ ≥ 0)", value=True)
-
+        num_vars = st.number_input(
+            "決策變數數量",
+            min_value=1,
+            max_value=6,
+            value=2,
+            step=1
+        )
+    
     st.markdown("**請輸入目標函數係數 (Z)：**")
     obj_cols = st.columns(num_vars)
     obj_c = []
     default_c = [20.0, 15.0, 10.0, 10.0, 10.0, 10.0]
+    
     for i in range(num_vars):
         with obj_cols[i]:
-            val = st.number_input(f"x{i+1} 係數", value=default_c[i] if i < len(default_c) else 1.0, key=f"obj_{i}")
+            val = st.number_input(
+                f"x{i+1} 係數",
+                value=default_c[i] if i < len(default_c) else 1.0,
+                key=f"obj_{i}"
+            )
             obj_c.append(val)
 
     st.markdown("---")
     st.subheader("2. 限制式條件設定")
+    non_neg = st.checkbox("啟用非負限制 (xᵢ ≥ 0)", value=True)
+    
     num_constraints = st.number_input("限制式數量", min_value=1, max_value=8, value=2, step=1)
 
     constraints_input = []
