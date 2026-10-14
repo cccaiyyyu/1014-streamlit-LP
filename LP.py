@@ -231,7 +231,7 @@ if app_mode == "線性規劃計算器":
             )
             st.info(meaning_text)
 
-            st.subheader("5. 限制式狀態與敏感度分析 (Sensitivity & Shadow Price)")
+            st.subheader("5. 限制式與敏感度分析")
             table_data = []
             interpretations = []
 
@@ -658,7 +658,7 @@ elif app_mode == "薪資最佳化決策支援系統":
 
     st.subheader("求解結果與目標函數值")
     if not success:
-        st.error("求解狀態：無可行解 (Infeasible)。原因：最低剛性生活與投資底限總和超出可支配預算。")
+        st.error("求解狀態：無可行解 (Infeasible)。原因：最低生活與投資底限總和超出可支配預算。")
     else:
         asset_sum = sol[3] + sol[4] + sol[5]
         c1, c2, c3 = st.columns(3)
@@ -773,11 +773,11 @@ else:
     # 2. 限制式參數自訂調整區
     st.markdown("---")
     st.subheader("2. 限制式邊界參數自訂調整 (Custom Constraint Parameters)")
-    st.caption("使用者可依個人財務偏好與剛性需求，彈性自訂各項不等式之常數與比例門檻。")
+    st.caption("使用者可依個人財務偏好與需求，彈性自訂各項不等式之常數與比例門檻。")
 
     con_col1, con_col2 = st.columns(2)
     with con_col1:
-        st.markdown("**金額型下限約束 (剛性保障門檻)：**")
+        st.markdown("**金額型下限約束 (保障門檻)：**")
         param_x1_min = st.number_input("基本生活保障下限 (x₁ ≥ ? 元)", value=9000.0, step=500.0, key="par_x1_min")
         param_x4_min = st.number_input("核心長期投資底限 (x₄ ≥ ? 元)", value=10000.0, step=1000.0, key="par_x4_min")
         
@@ -851,7 +851,7 @@ else:
         success_3, sol_data_3, err_msg_3 = solve_lp_highs("Max", weights_3, constraints_custom, non_neg=True)
 
         if not success_3:
-            st.error(f"求解失敗：在目前的參數設定下無可行解 (Infeasible)！原因：剛性保障底限與固定下限總額超出可支配預算 ({err_msg_3})。請調降最低保障金額或提高薪資。")
+            st.error(f"求解失敗：在目前的參數設定下無可行解 (Infeasible)！原因：底限與固定下限總額超出可支配預算 ({err_msg_3})。請調降最低保障金額或提高薪資。")
         else:
             sol_3 = sol_data_3['x']
             best_z_3 = sol_data_3['z']
@@ -896,7 +896,7 @@ else:
                 )
                 st.plotly_chart(fig_pie3, use_container_width=True)
 
-            st.subheader("自訂限制式狀態與敏感度分析 (Sensitivity & Status)")
+            st.subheader("限制式狀態與敏感度分析 (Sensitivity & Status)")
             table_custom_data = []
             for k, con in enumerate(constraints_custom):
                 lhs_val = sum(con['a'][j] * sol_3[j] for j in range(7))
