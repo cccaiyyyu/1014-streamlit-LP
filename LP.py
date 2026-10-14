@@ -772,7 +772,7 @@ else:
 
     # 2. 限制式參數自訂調整區
     st.markdown("---")
-    st.subheader("2. 限制式邊界參數自訂調整 (Custom Constraint Parameters)")
+    st.subheader("2. 限制式邊界參數自訂調整")
     st.caption("使用者可依個人財務偏好與需求，彈性自訂各項不等式之常數與比例門檻。")
 
     con_col1, con_col2 = st.columns(2)
@@ -896,7 +896,7 @@ else:
                 )
                 st.plotly_chart(fig_pie3, use_container_width=True)
 
-            st.subheader("限制式狀態與敏感度分析 (Sensitivity & Status)")
+            st.subheader("限制式與敏感度分析")
             table_custom_data = []
             for k, con in enumerate(constraints_custom):
                 lhs_val = sum(con['a'][j] * sol_3[j] for j in range(7))
@@ -918,7 +918,7 @@ else:
             st.dataframe(pd.DataFrame(table_custom_data), use_container_width=True, hide_index=True)
 
     # 範本三最底部的數學規劃模型規格與參數說明 (比照範本二)
-    with st.expander("查看數學規劃模型與限制式規格 (Mathematical Model)"):
+    with st.expander("查看數學規劃模型與限制式規格"):
         st.code("""
 決策變數:
 x1(生活), x2(社交), x3(進修), x4(投資), x5(預備金), x6(儲蓄), x7(嗜好)
