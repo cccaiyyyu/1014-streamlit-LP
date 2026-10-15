@@ -1,9 +1,16 @@
 import streamlit as st
+import streamlit.components.v1 as components
 import plotly.graph_objects as go
 import pandas as pd
 import numpy as np
 from scipy.optimize import linprog
 from scipy.spatial import ConvexHull
+from pathlib import Path
+
+draggable_iso_profit = components.declare_component(
+    "draggable_iso_profit",
+    path=str(Path(__file__).parent / "draggable_iso_profit")
+)
 
 # -------------------------------------------------------------------------------------------------
 # 通用輔助函式：整數顯示整數，浮點數顯示至小數點後兩位
@@ -209,8 +216,15 @@ if app_mode == "線性規劃計算器":
         con_latex_list.append(f"{vars_str} &\\ge 0")
     latex_str += " \\\\\n".join(con_latex_list) + "\n\\end{aligned}"
     st.latex(latex_str)
+    dragged_z = st.session_state.get("iso_profit_drag_value")
+    if num_vars == 2 and dragged_z is not None:
+        st.caption("圖上拖曳等利潤線後的目標值：")
+        st.latex(f"Z = {fmt_num(obj_c[0])}x_1 + {fmt_num(obj_c[1])}x_2 = {fmt_num(dragged_z)}")
 
-    if st.button("求解最佳解 (Solve)", type="primary"):
+    solve_clicked = st.button("求解最佳解 (Solve)", type="primary")
+    if solve_clicked:
+        st.session_state["lp_solved"] = True
+    if solve_clicked or st.session_state.get("lp_solved", False):
         success, sol_data, err_msg = solve_lp_highs(opt_type, obj_c, constraints_input, non_neg)
 
         if not success:
@@ -387,15 +401,35 @@ if app_mode == "線性規劃計算器":
                             ))
 
                 c_x1, c_x2 = obj_c[0], obj_c[1]
+                z_corners = [
+                    c_x1 * x + c_x2 * y
+                    for x in (0.0, max_x)
+                    for y in (0.0, max_y)
+                ]
+                z_min, z_max = min(z_corners), max(z_corners)
+                if abs(z_max - z_min) < 1e-9:
+                    z_min, z_max = best_z - 1.0, best_z + 1.0
+                z_value = float(np.clip(
+                    st.session_state.get("iso_profit_drag_value", best_z), z_min, z_max
+                ))
                 if abs(c_x2) > 1e-5:
-                    y_obj = (best_z - c_x1 * x_vals) / c_x2
+                    y_obj = (z_value - c_x1 * x_vals) / c_x2
                     mask_obj = (y_obj >= 0) & (y_obj <= max_y)
                     fig.add_trace(go.Scatter(
                         x=x_vals[mask_obj], y=y_obj[mask_obj],
                         mode='lines',
                         line=dict(color='purple', width=2.5, dash='dash'),
-                        name=f"等利潤線 (Z* = {fmt_num(best_z)})"
+                        name=f"等利潤線 (Z = {fmt_num(z_value)})",
+                        showlegend=True
                     ))
+                elif abs(c_x1) > 1e-5:
+                    x_obj = z_value / c_x1
+                    if 0 <= x_obj <= max_x:
+                        fig.add_trace(go.Scatter(
+                            x=[x_obj, x_obj], y=[0, max_y], mode='lines',
+                            line=dict(color='purple', width=2.5, dash='dash'),
+                            name=f"等利潤線 (Z = {fmt_num(z_value)})"
+                        ))
 
                 fig.add_trace(go.Scatter(
                     x=[sol[0]], y=[sol[1]],
@@ -412,7 +446,17 @@ if app_mode == "線性規劃計算器":
                     yaxis=dict(title="決策變數 x₂", range=[0, max_y]),
                     height=480
                 )
-                st.plotly_chart(fig, use_container_width=True)
+                drag_result = draggable_iso_profit(
+                    figure_json=fig.to_json(),
+                    objective=[float(c_x1), float(c_x2)],
+                    z_value=z_value,
+                    min_z=float(z_min),
+                    max_z=float(z_max),
+                    key="iso_profit_drag_value",
+                    default=float(best_z),
+                )
+                if drag_result is not None and abs(float(drag_result) - z_value) > 1e-8:
+                    st.session_state["iso_profit_drag_value"] = float(drag_result)
 
 # -------------------------------------------------------------------------------------------------
 # 頁面二：進階範本一 - 運輸問題排程系統
